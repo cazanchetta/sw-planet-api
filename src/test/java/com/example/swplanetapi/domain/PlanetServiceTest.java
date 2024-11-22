@@ -1,9 +1,10 @@
 package com.example.swplanetapi.domain;
 
-import static com.example.swplanetapi.common.PlanetConstants.PLANET;
 import static com.example.swplanetapi.common.PlanetConstants.INVALID_PLANET;
+import static com.example.swplanetapi.common.PlanetConstants.PLANET;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
@@ -11,42 +12,49 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
-//@SpringBootTest(classes = PlanetService.class)
 public class PlanetServiceTest {
+  @InjectMocks
+  private PlanetService planetService;
 
-    @InjectMocks
-//    @Autowired
-    private PlanetService planetService;
+  @Mock
+  private PlanetRepository planetRepository;
 
-    @Mock
-//    @MockBean
-    private PlanetRepository planetRepository;
+  @Test
+  public void createPlanet_WithValidData_ReturnsPlanet() {
+    when(planetRepository.save(PLANET)).thenReturn(PLANET);
 
-    @Test
-    // operacao_estado_retorno
-    public void createPlanet_WithValidData_ReturnsPlanet() {
-        // AAA
+    Planet sut = planetService.create(PLANET);
 
-        // Arrange
-        when(planetRepository.save(PLANET)).thenReturn(PLANET);
+    assertThat(sut).isEqualTo(PLANET);
+  }
 
-        // Act
-        // system under test
-        Planet sut = planetService.create(PLANET);
+  @Test
+  public void createPlanet_WithInvalidData_ThrowsException() {
+    when(planetRepository.save(INVALID_PLANET)).thenThrow(RuntimeException.class);
 
-        // Assert
-        assertThat(sut).isEqualTo(PLANET);
-    }
+    assertThatThrownBy(() -> planetService.create(INVALID_PLANET)).isInstanceOf(RuntimeException.class);
+  }
 
-    @Test
-    public void createPlanet_WithInvalidData_ThrowsException() {
-        when(planetRepository.save(INVALID_PLANET)).thenThrow(RuntimeException.class);
-        assertThatThrownBy(() -> planetService.create(INVALID_PLANET)).isInstanceOf(RuntimeException.class);
-    }
+  @Test
+  public void getPlanet_ByExistingId_ReturnsPlanet() {
+    when(planetRepository.findById(anyLong())).thenReturn(Optional.of(PLANET));
 
+    Optional<Planet> sut = planetService.get(1L);
+
+    assertThat(sut).isNotEmpty();
+    assertThat(sut.get()).isEqualTo(PLANET);
+  }
+
+  @Test
+  public void getPlanet_ByUnexistingId_ReturnsEmpty() {
+    when(planetRepository.findById(1L)).thenReturn(Optional.empty());
+
+    Optional<Planet> sut = planetService.get(1L);
+
+    assertThat(sut).isEmpty();
+  }
 }
